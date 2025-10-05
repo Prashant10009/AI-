@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Extraction Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .record-summary { cursor: pointer; }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            overflow-x: auto;
+        }
+        .field-controls { float: right; }
+    </style>
+</head>
+<body class="bg-light">
+<div class="container py-4">
+    <h2 class="mb-4">📄 Extraction Job Dashboard</h2>
+    <table class="table table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>Job ID</th>
+                <th>Document Type</th>
+                <th>Filename</th>
+                <th>Fallback</th>
+                <th>Donut</th>
+                <th>Confidence</th>
+                <th>Details</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in records %}
+            <tr class="record-summary" data-bs-toggle="collapse" data-bs-target="#details-{{ loop.index }}" aria-expanded="false">
+                <td>{{ record.job_id }}</td>
+                <td>{{ record.document_type }}</td>
+                <td>{{ record.filename }}</td>
+                <td>
+                    {% if record.fallback_triggered %}
+                        <span class="badge bg-warning text-dark">Yes</span>
+                    {% else %}
+                        <span class="badge bg-success">No</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if record.donut_used %}
+                        <span class="badge bg-info text-dark">🧠 Used</span>
+                    {% else %}
+                        <span class="badge bg-secondary">No</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if record.verification_score is defined %}
+                        {% if record.verification_score < 0.75 %}
+                            <span class="badge bg-danger">⚠️ {{ record.verification_score }}</span>
+                        {% else %}
+                            <span class="badge bg-info">✅ {{ record.verification_score }}</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="badge bg-secondary">N/A</span>
+                    {% endif %}
+                </td>
+                <td><button class="btn btn-sm btn-outline-info">Toggle</button></td>
+            </tr>
+            <tr class="collapse" id="details-{{ loop.index }}">
+                <td colspan="7">
+                    <div class="p-3">
+                        {% if record.verification_status %}
+                        <p><strong>Verification Status:</strong> {{ record.verification_status }}</p>
+                        {% endif %}
+                        {% if record.unmatched_fields %}
+                        <p><strong>Unmatched Fields:</strong></p>
+                        <pre>{{ record.unmatched_fields }}</pre>
+                        {% endif %}
+                        <p><strong>Verified Structured Fields:</strong></p>
+                        <ul class="list-group">
+                            {% for key, val in record.final_structured_data.items() %}
+                            <li class="list-group-item" data-path="/{{ key | replace('.', '/') }}">
+
+                                <strong>{{ key }}:</strong>
+                                <span class="field-controls">
+                                    <button class="btn btn-success btn-sm">✓</button>
+                                    <button class="btn btn-danger btn-sm">✗</button>
+                                    <button class="btn btn-warning btn-sm">✎</button>
+                                </span>
+                                <span class="field-value">{{ val }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7">No extraction records found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function sendFeedback(jobId, path, action, newValue=null) {
+  fetch("/feedback/", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      job_id: jobId,
+      path: path,
+      action: action,
+      new_value: newValue
+    })
+  }).then(r=>r.json()).then(j=>{
+      console.log("✅ feedback saved:", j);
+  }).catch(err=>console.error(err));
+}
+
+// Attach listeners after DOM ready
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll(".list-group-item").forEach(li=>{
+      const jobId = li.closest("tr.collapse").previousElementSibling.children[0].innerText.trim();
+      const path   = li.dataset.path;           // we’ll add this attr below
+      li.querySelector(".btn-success").onclick = () => sendFeedback(jobId, path, "approve");
+      li.querySelector(".btn-danger").onclick  = () => sendFeedback(jobId, path, "reject");
+      li.querySelector(".btn-warning").onclick = () => {
+          const newVal = prompt("Edit field value:", li.querySelector(".field-value").innerText);
+          if(newVal!==null) {
+              li.querySelector(".field-value").innerText = newVal;
+              sendFeedback(jobId, path, "edit", newVal);
+          }
+      };
+  });
+});
+</script>
+

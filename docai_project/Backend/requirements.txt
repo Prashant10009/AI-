@@ -1,0 +1,62 @@
+# --- CORE GPT + NLP ---
+openai
+transformers
+langchain
+llama-index
+sentence-transformers
+unstructured
+
+# --- BACKEND & API ---
+fastapi
+uvicorn
+pydantic
+python-multipart
+aiofiles
+httpx
+requests
+python-dotenv
+
+# --- OCR + FILE PARSING ---
+pytesseract
+opencv-python
+pdf2image
+Pillow
+PyMuPDF
+pdfminer.six
+wand
+layoutparser
+easyocr
+
+# --- ML + RISK ANALYSIS ---
+torch
+torchvision
+torchaudio
+scikit-learn
+xgboost
+pandas
+numpy
+joblib
+
+# --- DATABASE SUPPORT ---
+sqlalchemy
+psycopg2-binary
+pymongo
+faiss-cpu  # Use faiss-gpu if you install CUDA/GPU
+redis
+
+# --- TASK QUEUES (Optional) ---
+celery
+
+# --- LOGGING + UTILITIES ---
+loguru
+
+# --- DEV TOOLS (Optional) ---
+black
+flake8
+mypy
+pre-commit
+
+protobuf>=3.20.0
+sentencepiece
+certifi
+
